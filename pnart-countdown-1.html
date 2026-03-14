@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNART — Spaceman Edition Drop</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --space: #020510;
+    --deep: #060d1f;
+    --glow: #00c8ff;
+    --hot: #ff3c6e;
+    --gold: #f0c060;
+    --white: #f0f4ff;
+    --dim: rgba(240,244,255,0.55);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--space);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- STAR FIELD ---- */
+  #stars-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ---- NOISE OVERLAY ---- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ---- NEBULA BG ---- */
+  .nebula {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .nebula-1 { width: 600px; height: 600px; background: #1a0a3a; top: -150px; left: -150px; }
+  .nebula-2 { width: 500px; height: 500px; background: #003050; bottom: -100px; right: -100px; }
+  .nebula-3 { width: 350px; height: 350px; background: #200a10; top: 40%; left: 50%; transform: translate(-50%,-50%); }
+
+  /* ---- LAYOUT ---- */
+  .wrapper {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 16px 60px;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 0 10px;
+    border-bottom: 1px solid rgba(0,200,255,0.12);
+  }
+
+  .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    letter-spacing: 0.12em;
+    background: linear-gradient(135deg, var(--white) 30%, var(--glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    position: relative;
+  }
+
+  .edition-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--glow);
+    border: 1px solid var(--glow);
+    padding: 4px 10px;
+    border-radius: 2px;
+    animation: pulse-border 3s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.5); }
+    50% { box-shadow: 0 0 0 6px rgba(0,200,255,0); }
+  }
+
+  /* ---- HERO ---- */
+  .hero {
+    width: 100%;
+    max-width: 900px;
+    text-align: center;
+    padding: 50px 0 30px;
+  }
+
+  .eyebrow {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: var(--hot);
+    margin-bottom: 16px;
+    animation: fadeUp 0.8s both;
+  }
+
+  .headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 12vw, 7.5rem);
+    line-height: 0.92;
+    letter-spacing: 0.04em;
+    animation: fadeUp 0.9s 0.1s both;
+  }
+
+  .headline span { color: var(--glow); }
+
+  .sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.9rem, 2.5vw, 1.15rem);
+    color: var(--dim);
+    margin-top: 16px;
+    letter-spacing: 0.04em;
+    animation: fadeUp 1s 0.2s both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- COUNTDOWN ---- */
+  .countdown-wrap {
+    margin: 44px 0 20px;
+    animation: fadeUp 1s 0.35s both;
+  }
+
+  .countdown-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .countdown {
+    display: flex;
+    gap: clamp(12px, 4vw, 30px);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cd-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 80px;
+  }
+
+  .cd-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 10vw, 5.5rem);
+    line-height: 1;
+    background: linear-gradient(180deg, #fff 40%, rgba(0,200,255,0.6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    text-shadow: none;
+    min-width: 1.1ch;
+    text-align: center;
+    filter: drop-shadow(0 0 18px rgba(0,200,255,0.25));
+    transition: transform 0.15s;
+  }
+
+  .cd-num.tick {
+    animation: tick-scale 0.2s ease-out;
+  }
+
+  @keyframes tick-scale {
+    0% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  .cd-unit {
+    font-size: 0.58rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(0,200,255,0.7);
+  }
+
+  .cd-sep {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    color: rgba(0,200,255,0.3);
+    align-self: flex-start;
+    margin-top: 6px;
+    animation: blink 1.2s step-end infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity: 0.2; } }
+
+  /* ---- PRICE BANNER ---- */
+  .price-strip {
+    background: linear-gradient(90deg, rgba(255,60,110,0.12), rgba(255,60,110,0.22), rgba(255,60,110,0.12));
+    border: 1px solid rgba(255,60,110,0.35);
+    border-radius: 4px;
+    padding: 18px 28px;
+    text-align: center;
+    max-width: 540px;
+    width: 100%;
+    margin: 10px 0 16px;
+    animation: fadeUp 1s 0.45s both;
+  }
+
+  .price-strip .top-line {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--hot);
+    margin-bottom: 8px;
+  }
+
+  .prices {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .old-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: rgba(255,255,255,0.3);
+    text-decoration: line-through;
+  }
+
+  .arrow-price { color: var(--hot); font-size: 1.4rem; }
+
+  .new-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    color: var(--gold);
+    filter: drop-shadow(0 0 12px rgba(240,192,96,0.45));
+  }
+
+  .price-note {
+    font-size: 0.68rem;
+    color: var(--dim);
+    letter-spacing: 0.15em;
+    margin-top: 6px;
+  }
+
+  /* ---- INFO CARDS ---- */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 900px;
+    margin: 10px 0 24px;
+    animation: fadeUp 1s 0.55s both;
+  }
+
+  .info-card {
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(0,200,255,0.12);
+    border-radius: 6px;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .info-card:hover {
+    border-color: rgba(0,200,255,0.4);
+    background: rgba(0,200,255,0.06);
+  }
+
+  .card-icon { font-size: 1.5rem; }
+
+  .card-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--glow);
+  }
+
+  .card-body {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  /* ---- CTA BUTTON ---- */
+  .cta-wrap {
+    animation: fadeUp 1s 0.65s both;
+    margin: 6px 0 30px;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #00b44e, #00d45f);
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.18em;
+    padding: 16px 38px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,180,78,0.3);
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.12);
+    transform: translateX(-100%);
+    transition: transform 0.35s;
+  }
+
+  .cta-btn:hover::before { transform: translateX(0); }
+  .cta-btn:hover { box-shadow: 0 0 48px rgba(0,180,78,0.5); transform: translateY(-2px); }
+  .cta-btn:active { transform: translateY(0); }
+
+  .wa-icon { font-size: 1.5rem; }
+
+  /* ---- SOCIAL ---- */
+  .social-section {
+    width: 100%;
+    max-width: 900px;
+    text-align: center;
+    animation: fadeUp 1s 0.75s both;
+    margin-top: 10px;
+  }
+
+  .social-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 14px;
+  }
+
+  .social-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .social-pill {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 100px;
+    padding: 8px 18px;
+    color: var(--dim);
+    text-decoration: none;
+    transition: border-color 0.25s, color 0.25s, background 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .social-pill:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.4);
+    color: var(--white);
+  }
+
+  .social-pill .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+
+  .dot-ig { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+  .dot-fb { background: #1877f2; }
+  .dot-tt { background: #fff; }
+
+  /* ---- DIVIDER ---- */
+  .divider {
+    width: 100%;
+    max-width: 900px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,200,255,0.2), transparent);
+    margin: 32px 0;
+  }
+
+  /* ---- FOOTER ---- */
+  footer {
+    text-align: center;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    padding-bottom: 20px;
+  }
+
+  /* ---- ORBIT RING DECORATION ---- */
+  .orbit-deco {
+    position: fixed;
+    bottom: -80px;
+    right: -80px;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,200,255,0.07);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .orbit-deco::after {
+    content: '';
+    position: absolute;
+    inset: 25px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,200,255,0.05);
+  }
+
+  /* ---- LAUNCHED STATE ---- */
+  #launched-msg {
+    display: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 8vw, 4rem);
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 0.1em;
+    filter: drop-shadow(0 0 20px rgba(240,192,96,0.5));
+    animation: pulse-glow 2s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%,100% { filter: drop-shadow(0 0 20px rgba(240,192,96,0.5)); }
+    50% { filter: drop-shadow(0 0 40px rgba(240,192,96,0.9)); }
+  }
+
+  @media (max-width: 480px) {
+    .info-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+<div class="orbit-deco"></div>
+
+<div class="wrapper">
+
+  <header>
+    <div class="brand">PNART</div>
+    <div class="edition-badge">🚀 Spaceman Edition</div>
+  </header>
+
+  <main class="hero">
+    <p class="eyebrow">Dropping May 2026</p>
+    <h1 class="headline">THE <span>SPACEMAN</span><br>EDITION</h1>
+    <p class="sub">Limited run. Unreal graphics. Space-grade drip.<br>Don't sleep — first 10 customers get it at launch price.</p>
+  </main>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown-wrap">
+    <div class="countdown-label">Mission launches in</div>
+    <div class="countdown" id="countdown">
+      <div class="cd-block">
+        <div class="cd-num" id="cd-days">--</div>
+        <div class="cd-unit">Days</div>
+      </div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block">
+        <div class="cd-num" id="cd-hours">--</div>
+        <div class="cd-unit">Hours</div>
+      </div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block">
+        <div class="cd-num" id="cd-mins">--</div>
+        <div class="cd-unit">Mins</div>
+      </div>
+      <div class="cd-sep">:</div>
+      <div class="cd-block">
+        <div class="cd-num" id="cd-secs">--</div>
+        <div class="cd-unit">Secs</div>
+      </div>
+    </div>
+    <div id="launched-msg">🚀 WE'VE LAUNCHED! ORDER NOW</div>
+  </div>
+
+  <!-- PRICE STRIP -->
+  <div class="price-strip">
+    <div class="top-line">⚡ First 10 Customers Only</div>
+    <div class="prices">
+      <div class="old-price">R650</div>
+      <div class="arrow-price">→</div>
+      <div class="new-price">R500</div>
+    </div>
+    <div class="price-note">Regular price R650 · Launch special for the first 10 orders</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-wrap">
+    <a href="https://wa.me/27823031441?text=Hey%20PNART!%20I%20want%20to%20order%20the%20Spaceman%20Edition%20T-shirt%20🚀" class="cta-btn" target="_blank" rel="noopener">
+      <span class="wa-icon">💬</span> Order via WhatsApp
+    </a>
+  </div>
+
+  <!-- INFO CARDS -->
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="card-icon">📦</div>
+      <div class="card-title">Free Delivery</div>
+      <div class="card-body">Nationwide to your nearest PEP Store — free of charge.</div>
+    </div>
+    <div class="info-card">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Bolt Delivery</div>
+      <div class="card-body">Near Johannesburg Braamfontein? Get it delivered fast via Bolt.</div>
+    </div>
+    <div class="info-card">
+      <div class="card-icon">🎨</div>
+      <div class="card-title">Original Artwork</div>
+      <div class="card-body">Spaceman graphic — one-of-a-kind design by Pule Ndaba Art.</div>
+    </div>
+    <div class="info-card">
+      <div class="card-icon">🌍</div>
+      <div class="card-title">More Drops Coming</div>
+      <div class="card-body">Follow the pages — new releases dropping after May 2026.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SOCIAL -->
+  <div class="social-section">
+    <div class="social-title">Follow for more drops</div>
+    <div class="social-links">
+      <a href="https://instagram.com/PNART_clothing" class="social-pill" target="_blank" rel="noopener">
+        <span class="dot dot-ig"></span> @PNART_clothing
+      </a>
+      <a href="https://instagram.com/Pule_Ndaba_Art" class="social-pill" target="_blank" rel="noopener">
+        <span class="dot dot-ig"></span> @Pule_Ndaba_Art
+      </a>
+      <a href="https://facebook.com/PuleTimothyNdaba" class="social-pill" target="_blank" rel="noopener">
+        <span class="dot dot-fb"></span> Pule Timothy Ndaba
+      </a>
+      <a href="https://tiktok.com/@Puletheartist" class="social-pill" target="_blank" rel="noopener">
+        <span class="dot dot-tt"></span> @Puletheartist
+      </a>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <footer>© 2026 PNART Clothing · Johannesburg, South Africa</footer>
+
+</div>
+
+<script>
+// ---- STARS ----
+(function() {
+  const c = document.getElementById('stars-canvas');
+  const ctx = c.getContext('2d');
+  let stars = [];
+  function resize() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+  }
+  function initStars() {
+    stars = Array.from({length: 220}, () => ({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height,
+      r: Math.random() * 1.2 + 0.2,
+      a: Math.random(),
+      speed: Math.random() * 0.004 + 0.001,
+      phase: Math.random() * Math.PI * 2
+    }));
+  }
+  function drawStars(t) {
+    ctx.clearRect(0, 0, c.width, c.height);
+    stars.forEach(s => {
+      const alpha = s.a * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,230,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+  }
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize();
+  initStars();
+  requestAnimationFrame(drawStars);
+})();
+
+// ---- COUNTDOWN ----
+(function() {
+  // Target: May 1, 2026 00:00:00 SAST (UTC+2)
+  const target = new Date('2026-05-01T00:00:00+02:00').getTime();
+
+  const els = {
+    d: document.getElementById('cd-days'),
+    h: document.getElementById('cd-hours'),
+    m: document.getElementById('cd-mins'),
+    s: document.getElementById('cd-secs'),
+  };
+  const launched = document.getElementById('launched-msg');
+  const cdWrap = document.getElementById('countdown');
+
+  let prev = {};
+
+  function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+  function tick() {
+    const now = Date.now();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      cdWrap.style.display = 'none';
+      launched.style.display = 'block';
+      return;
+    }
+
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
+    const secs  = Math.floor((diff % 60000) / 1000);
+
+    function update(el, val, key) {
+      const s = pad(val);
+      if (prev[key] !== s) {
+        el.textContent = s;
+        el.classList.remove('tick');
+        void el.offsetWidth;
+        el.classList.add('tick');
+        prev[key] = s;
+      }
+    }
+
+    update(els.d, days,  'd');
+    update(els.h, hours, 'h');
+    update(els.m, mins,  'm');
+    update(els.s, secs,  's');
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
